@@ -1,0 +1,20 @@
+version: '3.7'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - node.name=${ELASTICSEARCH_NODE_NAME}
+      - cluster.name=${ELASTICSEARCH_CLUSTER_NAME}
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    env_file:
+      - config.py  # Use the config.py file to set environment variables
+
+volumes:
+  es_data:
+    driver: local
