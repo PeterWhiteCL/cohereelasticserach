@@ -93,7 +93,7 @@ default_k = 1
 def search(query):
 
     # Create the Elasticsearch client
-    es = Elasticsearch([es_url], basic_auth=('elastic', 'O5yqYOVPKSjmQ4WuB1JQ'), )
+    es = Elasticsearch([es_url], basic_auth=('elastic', 'O5yqYOVPKSjmQ4WuB1JQ'))
 
     # Create the Elasticsearch index (if it doesn't exist) with the correct mapping
     # if not es.indices.exists(index=index_name):
@@ -116,61 +116,62 @@ def search(query):
             }
         }
     }
-    es.indices.delete(index=index_name)
-    es.indices.create(index=index_name, body=request_body)
+
+    if not es.indices.exists(index=index_name):
+        es.indices.create(index=index_name, body=request_body)
 
     # Populate the index from the cache.jsonl file
     data_dict = {}
-    vector_list = []
-    # tempmatches = []
     with open("cache.jsonl", "r") as file:
         data = json.load(file)
         for abstract_text, embedding_vector in data.items():
-
-            vector_list.append(embedding_vector)
             # Index the document in Elasticsearch
             doc_id = hashlib.sha256(abstract_text.encode()).hexdigest()
             embedding_vector = [float(x) for x in embedding_vector]
             eList = str(embedding_vector)
             data_dict[eList] = abstract_text
-            # if embedding_vector[0] == -0.22827148:
-            #     print(embedding_vector)
-            #     tempmatches.append(embedding_vector)
-            es.index(index=index_name, id=doc_id, document={embedding_field: embedding_vector})
+            if not es.indices.exists(index=index_name):
+                es.index(index=index_name, id=doc_id, document={embedding_field: embedding_vector})
 
-    # Use the provided test_abstract to get the query_vector
+    # Use the provided query to get the query_vector
     test_abstract = query
     test_embedding = get_cohere_embedding(test_abstract, model_name=COHERE_MODEL)
     query_vector = [float(x) for x in test_embedding]
 
     # Perform k-NN search based on cosine similarity with the provided query_vector
     query = {
+        # "query": {
+        #     "term":{
+        #         "text": query
+        #     }
+        # },
         "knn": {
             "field": "embedding-vector",
             "query_vector": query_vector,
             "k": 3,
-            "num_candidates": 5
-        }
+            "num_candidates": 100
+        },
+        # # RRF code removed for license reasons
+        # "rank": {
+        #     "rrf": {
+        #         "window_size": 50,
+        #         "rank_constant": 20
+        #     }
+        # }
+
     }
-    result = es.knn_search(index=index_name, body=query)
+    result = es.search(index=index_name, body=query)
 
     # Process the search results
     matches = []
+    x = 0
     for hit in result.body["hits"]['hits']:
         score = hit["_score"]
         embedding_vector = hit["_source"][embedding_field]
-        try:
-            matches.append({"abstract": data_dict[str(embedding_vector)], "score": score})
-        except:
-            print(embedding_vector)
-            temp3 = []
-            for element in embedding_vector:
-                if element not in tempmatches[1]:
-                    temp3.append(element)
-            print(temp3)
-            continue
-
-        print(f"Score: {score:.4f}, Embedding: {embedding_vector}")
+        matches.append({"abstract": data_dict[str(embedding_vector)], "score": score})
+        x = x+1
+        if x == 3:
+            break
     return matches
 
-
+# search("this is just a test")
