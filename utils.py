@@ -46,7 +46,7 @@ def batch_embed(texts: List[str], batch_size: int = 256) -> List[np.array]:
         embeddings.extend(
             np.array(
                 co.embed(
-                    texts[start_idx: start_idx + batch_size],
+                    texts[start_idx : start_idx + batch_size],
                     model=COHERE_MODEL,
                 ).embeddings
             )
@@ -55,11 +55,12 @@ def batch_embed(texts: List[str], batch_size: int = 256) -> List[np.array]:
 
 
 def get_cohere_embedding(
-        text: Union[str, List[str]], model_name: str = "embed-english-v3.0", input_type="search_document"
+    text: Union[str, List[str]], input_type:str, model_name: str = "embed-english-light-v2.0"
 ) -> List[float]:
     """
     Embed a single text with cohere client and return list of floats
     """
+    input_type = "search_document"
     if type(text) == str:
         embed = co.embed([text], model=model_name, input_type=input_type).embeddings[0]
     else:
@@ -141,7 +142,7 @@ def format_search_output(out: Dict) -> pd.DataFrame:
             ]
             for o in out
         ]
-
+        
         df = pd.DataFrame(data, columns=columns)
     except Exception as e:
         print(f"couldnt format output because of {e}")
@@ -168,7 +169,7 @@ def colorize(sentence: str, words: Union[List[str], str], color: str = "blue") -
 
 
 def colorize_st(
-        sentence: str, words: Union[List[str], str], color: str = "blue"
+    sentence: str, words: Union[List[str], str], color: str = "blue"
 ) -> str:
     """Visualization function that will highlight the query words
     in a sentence with the color provided"""
