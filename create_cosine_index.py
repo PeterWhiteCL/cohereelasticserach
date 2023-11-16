@@ -4,13 +4,12 @@ from elasticsearch import Elasticsearch
 import numpy as np
 
 # Add the necessary imports
-from config import COHERE_MODEL, DATA_PATH, EMBED_COLUMN, COHERE_API_KEY
+from config import COHERE_MODEL, DATA_PATH, EMBED_COLUMN, COHERE_API_KEY, ES_PASSWORD, ES_USER
 from utils import get_cohere_embedding
 
 # Replace with your Elasticsearch URL and credentials
 es_url = "http://localhost:9200"
-ES_PASSWORD = "<es_pw>"
-ES_USER = "<es_user>"
+
 # Elasticsearch index name and field name for the embeddings
 index_name = "abstract_index"  # Replace with your index name
 embedding_field = "embedding_vector"  # Replace with the name of the field containing the embeddings
@@ -51,7 +50,7 @@ with open("cache.jsonl", "r") as file:
 
 # Use the provided test_abstract to get the query_vector
 test_abstract = "In this work, we explore \"prompt tuning\", a simple yet effective mechanism for learning \"soft prompts\" to condition frozen language models to perform specific downstream tasks. Unlike the discrete text prompts used by GPT-3, soft prompts are learned through backpropagation and can be tuned to incorporate signal from any number of labeled examples. Our end-to-end learned approach outperforms GPT-3's \"few-shot\" learning by a large margin. More remarkably, through ablations on model size using T5, we show that prompt tuning becomes more competitive with scale: as models exceed billions of parameters, our method \”closes the gap\” and matches the strong performance of model tuning (where all model weights are tuned). This finding is especially relevant in that large models are costly to share and serve, and the ability to reuse one frozen model for multiple downstream tasks can ease this burden. Our method can be seen as a simplification of the recently proposed \”prefix tuning\” of Li and Liang (2021), and we provide a comparison to this and other similar approaches. Finally, we show that conditioning a frozen model with soft prompts confers benefits in robustness to domain transfer, as compared to full model tuning."
-test = get_cohere_embedding(test_abstract, model_name=COHERE_MODEL)
+test = get_cohere_embedding(test_abstract, model_name=COHERE_MODEL, input_type="search_document")
 query_vector = [float(x) for x in embedding_vector]
 
 # Perform k-NN search based on cosine similarity with the provided query_vector
@@ -136,29 +135,19 @@ def search(query):
 
     # Use the provided query to get the query_vector
     test_abstract = query
-    test_embedding = get_cohere_embedding(test_abstract, model_name=COHERE_MODEL)
+    test_embedding = get_cohere_embedding(test_abstract, model_name=COHERE_MODEL, input_type="search_document")
     query_vector = [float(x) for x in test_embedding]
 
     # Perform k-NN search based on cosine similarity with the provided query_vector
     query = {
-        # "query": {
-        #     "term":{
-        #         "text": query
-        #     }
-        # },
+
         "knn": {
             "field": "embedding-vector",
             "query_vector": query_vector,
             "k": 3,
             "num_candidates": 100
         },
-        # # RRF code removed for license reasons
-        # "rank": {
-        #     "rrf": {
-        #         "window_size": 50,
-        #         "rank_constant": 20
-        #     }
-        # }
+
 
     }
     result = es.search(index=index_name, body=query)
@@ -175,4 +164,3 @@ def search(query):
             break
     return matches
 
-# search("this is just a test")

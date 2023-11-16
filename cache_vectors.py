@@ -11,7 +11,7 @@ df = pd.read_csv(DATA_PATH).fillna("").reset_index(drop=True)
 texts = list(df['abstract'].str.strip())
 
 # embed all texts with cohere client
-embed_list = get_cohere_embedding(texts, model_name=COHERE_MODEL)
+embed_list = get_cohere_embedding(texts, model_name=COHERE_MODEL, input_type="search_document")
 
 # create a lookup table of text:vector
 cache = dict(zip(texts, embed_list))

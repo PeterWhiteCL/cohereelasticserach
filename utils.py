@@ -55,12 +55,11 @@ def batch_embed(texts: List[str], batch_size: int = 256) -> List[np.array]:
 
 
 def get_cohere_embedding(
-    text: Union[str, List[str]], input_type:str, model_name: str = "embed-english-light-v2.0"
+    text: Union[str, List[str]], input_type:str, model_name: str = "embed-english-light-v3.0"
 ) -> List[float]:
     """
     Embed a single text with cohere client and return list of floats
     """
-    input_type = "search_document"
     if type(text) == str:
         embed = co.embed([text], model=model_name, input_type=input_type).embeddings[0]
     else:

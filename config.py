@@ -1,10 +1,9 @@
 import os
 
 import cohere
-# from dotenv import load_dotenv
-#from opensearchpy import OpenSearch
 
-# load_dotenv(".env")
+
+
 cohere_vector_size_lookup = {"embed-english-light-v2.0": 1024}
 
 COHERE_API_KEY = "eReng5vKo29t825i3mYu7A8dMPezrk8y6kqNHB1c"#os.environ["COHERE_API_KEY"]
@@ -16,6 +15,8 @@ DATA_COLUMNS = ["title", "abstract"]
 EMBED_COLUMN = ["abstract"]
 ELASTICSEARCH_NODE_NAME="my-es-node"
 ELASTICSEARCH_CLUSTER_NAME="my-es-cluster"
+ES_PASSWORD = "<es_pw>"
+ES_USER = "<es_user>"
 
 
 def get_cohere_client(api_key: str):
