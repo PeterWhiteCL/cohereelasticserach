@@ -7,7 +7,7 @@ import cohere
 cohere_vector_size_lookup = {"embed-english-light-v2.0": 1024}
 
 COHERE_API_KEY = "eReng5vKo29t825i3mYu7A8dMPezrk8y6kqNHB1c"#os.environ["COHERE_API_KEY"]
-COHERE_MODEL = "embed-english-light-v2.0"
+COHERE_MODEL = "embed-english-light-v3.0"
 VECTOR_NAME = "cohere_vector"
 VECTOR_SIZE = cohere_vector_size_lookup[COHERE_MODEL]
 DATA_PATH = "data/arxiv_5000.csv"
