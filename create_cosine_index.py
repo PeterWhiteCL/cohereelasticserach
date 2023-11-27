@@ -4,10 +4,10 @@ from elasticsearch import Elasticsearch
 import numpy as np
 
 # Add the necessary imports
-from config import COHERE_MODEL, DATA_PATH, EMBED_COLUMN, COHERE_API_KEY, ES_PASSWORD, ES_USER
+from config import COHERE_MODEL, DATA_PATH, EMBED_COLUMN, COHERE_API_KEY
 from utils import get_cohere_embedding
 
-# Replace with your Elasticsearch URL and credentials
+# Replace with your Elasticsearch URL
 es_url = "http://localhost:9200"
 
 # Elasticsearch index name and field name for the embeddings
@@ -18,7 +18,7 @@ embedding_field = "embedding_vector"  # Replace with the name of the field conta
 default_k = 3
 
 # Create the Elasticsearch client
-es = Elasticsearch([es_url],basic_auth=(ES_USER, ES_PASSWORD))
+es = Elasticsearch([es_url],basic_auth=('elastic', COHERE_API_KEY))
 
 # Create the Elasticsearch index (if it doesn't exist) with the correct mapping
 if not es.indices.exists(index=index_name):
@@ -71,21 +71,7 @@ for hit in result["hits"]["hits"]:
     print(f"Score: {score:.4f}, Embedding: {embedding_vector}")
 
 
-import json
-import hashlib
-from elasticsearch import Elasticsearch
-import numpy as np
 
-# Add the necessary imports
-from config import COHERE_MODEL, DATA_PATH, EMBED_COLUMN, COHERE_API_KEY
-from utils import get_cohere_embedding
-
-# Replace with your Elasticsearch URL
-es_url = "http://localhost:9200"
-
-# Elasticsearch index name and field name for the embeddings
-index_name = "abstract_index"  # Replace with your index name
-embedding_field = "embedding-vector"  # Replace with the name of the field containing the embeddings
 
 # Default k value for k-NN search
 default_k = 1
@@ -93,74 +79,26 @@ default_k = 1
 def search(query):
 
     # Create the Elasticsearch client
-    es = Elasticsearch([es_url], basic_auth=('elastic', 'O5yqYOVPKSjmQ4WuB1JQ'))
-
-    # Create the Elasticsearch index (if it doesn't exist) with the correct mapping
-    # if not es.indices.exists(index=index_name):
-
-    settings = {
-            "number_of_shards": 1,
-            "number_of_replicas": 1
-        }
-    mappings = {
-        "properties": {
-            "abstract": {
-                "type": "text",
-            },
-            "embedding-vector": {
-                "type": "dense_vector",
-                "dims": 1024,
-                "index": "true",
-                "similarity": "cosine"
-            }
-        }
-    }
-
-
-    if not es.indices.exists(index=index_name):
-        es.indices.create(index=index_name, settings=settings, mappings=mappings)
-
-    # Populate the index from the cache.jsonl file
-    data_dict = {}
-    with open("cache.jsonl", "r") as file:
-        data = json.load(file)
-        for abstract_text, embedding_vector in data.items():
-            # Index the document in Elasticsearch
-            doc_id = hashlib.sha256(abstract_text.encode()).hexdigest()
-            embedding_vector = [float(x) for x in embedding_vector]
-            eList = str(embedding_vector)
-            data_dict[eList] = abstract_text
-            if not es.indices.exists(index=index_name):
-                es.index(index=index_name, id=doc_id, document={embedding_field: embedding_vector})
+    es = Elasticsearch([es_url], basic_auth=(<elastic_user>, <elastic_password>))
 
     # Use the provided query to get the query_vector
     test_abstract = query
-    test_embedding = get_cohere_embedding(test_abstract, model_name=COHERE_MODEL, input_type="search_document")
+    test_embedding = get_cohere_embedding(test_abstract, model_name=COHERE_MODEL, input_type="search_query")
     query_vector = [float(x) for x in test_embedding]
 
     # Perform k-NN search based on cosine similarity with the provided query_vector
     query = {
-
-        "knn": {
+         "knn": {
             "field": "embedding-vector",
             "query_vector": query_vector,
             "k": 3,
             "num_candidates": 100
         },
-
-
+ 
     }
     result = es.search(index=index_name, body=query)
 
-    # Process the search results
-    matches = []
-    x = 0
-    for hit in result.body["hits"]['hits']:
-        score = hit["_score"]
-        embedding_vector = hit["_source"][embedding_field]
-        matches.append({"abstract": data_dict[str(embedding_vector)], "score": score})
-        x = x+1
-        if x == 3:
-            break
+    matches = [{"abstract": data_dict[str(hit["_source"][embedding_field])], "score": hit["_score"]}
+               for hit in result.body["hits"]['hits'][:3]]
     return matches
 
