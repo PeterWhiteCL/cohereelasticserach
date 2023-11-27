@@ -4,9 +4,9 @@ import cohere
 
 
 
-cohere_vector_size_lookup = {"embed-english-light-v2.0": 1024}
+cohere_vector_size_lookup = {"embed-english-light-v3.0": 1024}
 
-COHERE_API_KEY = "eReng5vKo29t825i3mYu7A8dMPezrk8y6kqNHB1c"#os.environ["COHERE_API_KEY"]
+COHERE_API_KEY = os.environ["COHERE_API_KEY"]
 COHERE_MODEL = "embed-english-light-v3.0"
 VECTOR_NAME = "cohere_vector"
 VECTOR_SIZE = cohere_vector_size_lookup[COHERE_MODEL]
@@ -25,4 +25,4 @@ def get_cohere_client(api_key: str):
 
 # init your clients
 co = get_cohere_client(COHERE_API_KEY)
-#client = get_opensearch_client()
+
